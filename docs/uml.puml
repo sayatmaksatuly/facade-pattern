@@ -1,0 +1,131 @@
+@startuml
+title Smart Parking Garage Assignment 4
+skinparam classAttributeIconSize 0
+class ParkingConsole <<client>> {
+  run menu and commands
+  ParkingRequest -> Workflow
+}
+class GarageRuntime <<composition root>> {
+  construct and inject dependencies
+  + parking() / administration()
+}
+class ParkingFacade <<workflow facade>> {
+  + park(request) : Workflow
+  + resume(id) : Workflow
+  + compensate(id, reason) : Workflow
+  + prepareAfterA(request) : Workflow
+}
+class AdministrationFacade <<administrative facade>> {
+  + inspect() / history(id)
+  + recoverAll() / recover(id)
+  + cancel(id) / checkpoint(request)
+  + demonstrateStandalone(subsystem, id)
+}
+class WorkflowStore <<durable workflow journal>> {
+  + createOrLoad(request) / get(id)
+  + transition(...) / event(...) / events(id)
+  Workflow -> ParkingRequest, WorkflowState
+  WorkflowEvent: ordered persisted event
+}
+class Database <<technical infrastructure>> {
+  + transaction(SqlWork<T>) : T
+  + close()
+  JDBC Connection, SQLite file
+  one transaction per gateway operation
+}
+package "Subsystem A gate" {
+class GateController <<subsystem API>> {
+  + hold(id, plate, heightCm)
+  + admit(id) / cancel(id)
+  + find(id) / all()
+}
+class LicensePlateReader <<pure business rules>> {
+  + read(rawPlate, heightCm) : String
+  plate validation and clearance <= 220 cm
+}
+class GateGateway <<own persistence gateway>> {
+  + hold(admission)
+  + admit(id) / cancel(id)
+  + find(id) / all()
+}
+class GateAdmission <<entity record>> {
+  operationId, plate, heightCm, status
+  + admit() / cancel()
+  Status: HELD, ADMITTED, CANCELLED
+}
+}
+package "Subsystem B spaces" {
+class ReservationManager <<subsystem API>> {
+  + reserve(id, space)
+  + occupy(id) / release(id)
+  + find(id) / all() / setSpaceBlocked(...)
+}
+class SpaceSensorGrid <<pure business rules>> {
+  + validateSpace(space)
+  + requireAvailable(space, blocked, allocated)
+}
+class ReservationGateway <<own persistence gateway>> {
+  + reserve(reservation, sensorGrid)
+  + occupy(id) / release(id)
+  + setSpaceBlocked(...) / find(id) / all()
+}
+class ParkingReservation <<entity record>> {
+  operationId, space, status
+  + occupy() / release()
+  Status: RESERVED, OCCUPIED, RELEASED
+}
+}
+package "Subsystem C payment" {
+class PaymentTerminal <<subsystem API>> {
+  + charge(...) / authorize(...)
+  + capture(id) / refund(id)
+  + find(id) / all()
+}
+class OverstayAlert <<pure business rules>> {
+  + priceCents(hours) / requireSufficientTender(...)
+  + overdueMinutes(prepaidHours, elapsedMinutes)
+}
+class PaymentGateway <<own persistence gateway>> {
+  + save(payment, capture)
+  + capture(id) / refund(id)
+  + find(id) / all()
+}
+class ParkingPayment <<entity record>> {
+  operationId, hours, tenderCents, amountCents, status
+  + capture() / refund()
+  Status: AUTHORIZED, CAPTURED, REFUNDED
+}
+}
+ParkingConsole --> ParkingFacade
+ParkingConsole --> AdministrationFacade
+GarageRuntime --> ParkingFacade
+GarageRuntime --> AdministrationFacade
+GarageRuntime --> Database
+AdministrationFacade --> ParkingFacade
+ParkingFacade --> GateController
+ParkingFacade --> ReservationManager
+ParkingFacade --> PaymentTerminal
+ParkingFacade --> WorkflowStore
+AdministrationFacade --> GateController
+AdministrationFacade --> ReservationManager
+AdministrationFacade --> PaymentTerminal
+AdministrationFacade --> WorkflowStore
+GateController --> LicensePlateReader
+GateController --> GateGateway
+GateGateway ..> GateAdmission
+GateGateway --> Database
+ReservationManager --> SpaceSensorGrid
+ReservationManager --> ReservationGateway
+ReservationGateway ..> ParkingReservation
+ReservationGateway --> Database
+PaymentTerminal --> OverstayAlert
+PaymentTerminal --> PaymentGateway
+PaymentGateway ..> ParkingPayment
+PaymentGateway --> Database
+ReservationGateway ..> SpaceSensorGrid
+WorkflowStore --> Database
+note bottom of WorkflowStore
+Workflow, ParkingRequest, WorkflowState and WorkflowEvent
+are supporting value types; entities enforce their own transitions.
+end note
+@enduml

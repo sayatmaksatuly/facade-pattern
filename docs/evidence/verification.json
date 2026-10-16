@@ -1,0 +1,105 @@
+{
+    "verified_at":  "2026-10-16T13:35:39.7970165+05:00",
+    "build_command":  ".\\mvnw.cmd clean verify",
+    "test_suites":  [
+                        {
+                            "name":  "com.smartparking.app.ArchitectureTest",
+                            "tests":  4,
+                            "failures":  0,
+                            "errors":  0,
+                            "skipped":  0
+                        },
+                        {
+                            "name":  "com.smartparking.app.ParkingApplicationTest",
+                            "tests":  2,
+                            "failures":  0,
+                            "errors":  0,
+                            "skipped":  0
+                        },
+                        {
+                            "name":  "com.smartparking.app.ParkingConsoleTest",
+                            "tests":  12,
+                            "failures":  0,
+                            "errors":  0,
+                            "skipped":  0
+                        },
+                        {
+                            "name":  "com.smartparking.facade.ParkingFacadeTest",
+                            "tests":  24,
+                            "failures":  0,
+                            "errors":  0,
+                            "skipped":  0
+                        },
+                        {
+                            "name":  "com.smartparking.gate.GateControllerTest",
+                            "tests":  9,
+                            "failures":  0,
+                            "errors":  0,
+                            "skipped":  0
+                        },
+                        {
+                            "name":  "com.smartparking.infrastructure.DatabaseTest",
+                            "tests":  6,
+                            "failures":  0,
+                            "errors":  0,
+                            "skipped":  0
+                        },
+                        {
+                            "name":  "com.smartparking.payment.PaymentTerminalTest",
+                            "tests":  11,
+                            "failures":  0,
+                            "errors":  0,
+                            "skipped":  0
+                        },
+                        {
+                            "name":  "com.smartparking.spaces.ReservationManagerTest",
+                            "tests":  9,
+                            "failures":  0,
+                            "errors":  0,
+                            "skipped":  0
+                        }
+                    ],
+    "tests":  77,
+    "failures":  0,
+    "errors":  0,
+    "skipped":  0,
+    "required_coverage_targets":  {
+                                      "gate":  {
+                                                   "covered":  86,
+                                                   "total":  86,
+                                                   "percent":  100
+                                               },
+                                      "spaces":  {
+                                                     "covered":  110,
+                                                     "total":  110,
+                                                     "percent":  100
+                                                 },
+                                      "payment":  {
+                                                      "covered":  96,
+                                                      "total":  96,
+                                                      "percent":  100
+                                                  },
+                                      "ParkingFacade":  {
+                                                            "covered":  67,
+                                                            "total":  68,
+                                                            "percent":  98.53
+                                                        },
+                                      "AdministrationFacade":  {
+                                                                   "covered":  50,
+                                                                   "total":  50,
+                                                                   "percent":  100
+                                                               }
+                                  },
+    "required_scope":  {
+                           "covered":  409,
+                           "total":  410,
+                           "percent":  99.76
+                       },
+    "whole_project":  {
+                          "covered":  610,
+                          "total":  623,
+                          "percent":  97.91
+                      },
+    "minimum_per_target_percent":  80,
+    "cli_evidence":  "docs/evidence/cli-verification.txt"
+}

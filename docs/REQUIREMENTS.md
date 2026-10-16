@@ -2,7 +2,7 @@
 
 Authoritative source: `Assignment_4_Facade patterm (2).docx`, read in full before implementation. The source repeats section number 6 for the domain note and individual variants; those headings are preserved below. Assigned domain: **Smart Parking Garage, variant 20**.
 
-This checklist records intended evidence. A feature is verified only when its implementation and recorded checks have been inspected. Test results and coverage are reported in `README.md` and `Assignment4_Report.docx` after execution.
+Final local audit: **16 October 2026**. This checklist records inspected implementation and executed evidence. The verified Maven build passed 77 tests with no failures, errors or skipped tests. Actual results are preserved in `docs/evidence/verification.json` and `docs/evidence/cli-verification.txt`. Student-only submission and originality checks are explicitly separated below.
 
 ## Official mandatory requirements
 
@@ -50,18 +50,18 @@ This checklist records intended evidence. A feature is verified only when its im
 
 ## User-requested additions
 
-| Requirement | Planned evidence |
+| Requirement | Verified evidence |
 |---|---|
 | Java 17, Maven, JUnit 5, JaCoCo, SQLite, local CLI, Git | `pom.xml`, wrapper, source, tests, repository |
 | Retry-safe recovery and compensation; explicit transaction boundaries | Persisted workflow, idempotent gateways, repeated operation tests |
 | Invalid input, unexpected exceptions, partial recovery | CLI validation and recovery tests |
-| Report as real Word document | `Assignment4_Report.docx`, generated with Word OOXML and visually checked where renderer is available |
+| Report as real Word document | `Assignment4_Report.docx`, valid Word OOXML, nine pages; every page rendered through Microsoft Word PDF export and inspected as PNG |
 | README with measured results, Windows usage and full demonstration | `README.md` |
 | Russian defense guide with ≥15 questions and 3–5 live coding exercises | `DEFENSE_GUIDE.md` |
 | UML source and rendered image/vector | `docs/uml.puml`, `docs/uml.svg` |
 | Clean project; exclude binaries and local data; do not push | `.gitignore`, meaningful local commits only |
 | Actual process termination/restart | Saved CLI verification transcripts and persisted state inspection |
-| Final audit against original source | This checklist reviewed against final implementation and evidence |
+| Final audit against original source | This checklist reviewed against final source code, all original mandatory sections and recorded evidence |
 
 ## Official grading emphasis
 
@@ -74,3 +74,27 @@ This checklist records intended evidence. A feature is verified only when its im
 | Subsystems, facades and persistence | 5% | Structural independence, explicit dependencies, statuses and SQLite |
 
 No grade is predicted. Historical authorship, uniqueness among students, instructor approval and Moodle submission remain student responsibilities.
+
+## Final audit results
+
+| Check | Result | Evidence |
+|---|---|---|
+| Domain and class boundaries | PASS | Smart Parking Garage variant 20; four classes per subsystem; `ArchitectureTest` checks separation |
+| Main and administrative facades | PASS | `ParkingFacade` orchestration and `AdministrationFacade` inspection/recovery/manual cancellation |
+| Normal workflow and both compensation depths | PASS | Real CLI process transcript plus persisted-state assertions in `ParkingFacadeTest` |
+| Additional failure and independent use | PASS | Oversized vehicle REJECTED; all three standalone commands and subsystem tests |
+| Restart and incomplete-operation recovery | PASS | JVM forcibly killed after A committed; another JVM reads HELD/PENDING_B and completes recovery |
+| Idempotency and interrupted compensation | PASS | Repeated operations, commit/journal gaps, interrupted compensation and event order covered by tests |
+| Build and tests | PASS | `.\mvnw.cmd clean verify`: 77 tests, 0 failures, 0 errors, 0 skipped |
+| Required line coverage | PASS | Gate 86/86, spaces 110/110, payment 96/96, ParkingFacade 67/68, AdministrationFacade 50/50; combined 409/410 = 99.76% |
+| Whole-project line coverage | MEASURED | 610/623 = 97.91%; distinct from the required subsystem/facade scope |
+| Coverage threshold selection | PASS | Deliberate 101% check rejected all five configured required targets |
+| Windows launcher | PASS | Maven Wrapper launch enters interactive CLI and exits cleanly; packaged jar also verified |
+| UML | PASS | `uml.puml` and `uml.svg` generated from `generate_uml.py`; client and associations inspected against final source |
+| README and defense guide | PASS | Actual APIs, Windows commands, reset, both failures, Least Knowledge, short reflection; Russian guide with 20 questions and 5 exercises |
+| Formal report | PASS | `Assignment4_Report.docx`, nine readable pages, Times New Roman body 14 pt, real evidence and measured results |
+| Local Git history | PASS | Genuine implementation and associated tests committed together; no rewritten history or automatic push |
+| Prior-assignment and peer originality | STUDENT CHECK | Requires the student's earlier submissions and instructor context |
+| Remote repository URL and Moodle submission | STUDENT ACTION | No URL invented and no submission claimed |
+
+The packaged `render_docx.py` renderer was attempted but the Windows bundle has no LibreOffice executable. The report was instead exported read-only through installed Microsoft Word 2016, rasterized with bundled Poppler and inspected page by page. QA intermediates remain in ignored `docs/.qa/`; the submission deliverable is the DOCX.

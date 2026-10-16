@@ -1,0 +1,203 @@
+Actual Java process verification. Every command launches a new JVM against on-disk SQLite.
+Fresh isolated databases under target/demo-verification; production data is untouched.
+> java -jar target/smart-parking.jar --db <isolated database> park normal CAR123 180 1 2 1000
+SQLite file: C:\Users\ПК\Desktop\SDP-Assignment-4\target\demo-verification\db073802e1d444da80b313da2eb48975\scenarios.db
+Operation normal
+1. Request persisted; waiting for A.
+2. Stage A executing: read plate and hold entry clearance.
+3. A committed: entry clearance HELD; next B.
+4. Stage B executing: check sensor and reserve space.
+5. B committed: space RESERVED; next C.
+6. Stage C executing: calculate parking charge and validate tender.
+7. C committed: payment CAPTURED; workflow COMPLETED.
+Final persisted state: COMPLETED
+Exit code: 0
+> java -jar target/smart-parking.jar --db <isolated database> demo-b b-failure
+SQLite file: C:\Users\ПК\Desktop\SDP-Assignment-4\target\demo-verification\db073802e1d444da80b313da2eb48975\scenarios.db
+Real persisted sensor reading: space 2 BLOCKED. A will commit before B checks it.
+Operation b-failure
+8. Request persisted; waiting for A.
+9. Stage A executing: read plate and hold entry clearance.
+10. A committed: entry clearance HELD; next B.
+11. Stage B executing: check sensor and reserve space.
+12. Failure or administrative cancellation: PENDING_B: DomainException: Space 2 is blocked by a sensor obstruction.. Starting reverse compensation.
+13. Compensation A committed: entry clearance CANCELLED.
+14. Workflow COMPENSATED; all recorded domain effects have been reversed.
+Final persisted state: COMPENSATED
+Reason: PENDING_B: DomainException: Space 2 is blocked by a sensor obstruction.
+Exit code: 0
+> java -jar target/smart-parking.jar --db <isolated database> demo-c c-failure
+SQLite file: C:\Users\ПК\Desktop\SDP-Assignment-4\target\demo-verification\db073802e1d444da80b313da2eb48975\scenarios.db
+Payment tender: 100 cents for 2 hours costing 1000 cents. Space 3 must be available.
+Operation c-failure
+15. Request persisted; waiting for A.
+16. Stage A executing: read plate and hold entry clearance.
+17. A committed: entry clearance HELD; next B.
+18. Stage B executing: check sensor and reserve space.
+19. B committed: space RESERVED; next C.
+20. Stage C executing: calculate parking charge and validate tender.
+21. Failure or administrative cancellation: PENDING_C: DomainException: Payment rejected: 1000 cents required, but only 100 tendered.. Starting reverse compensation.
+22. Compensation B committed: space RELEASED.
+23. Compensation A committed: entry clearance CANCELLED.
+24. Workflow COMPENSATED; all recorded domain effects have been reversed.
+Final persisted state: COMPENSATED
+Reason: PENDING_C: DomainException: Payment rejected: 1000 cents required, but only 100 tendered.
+Exit code: 0
+> java -jar target/smart-parking.jar --db <isolated database> inspect
+SQLite file: C:\Users\ПК\Desktop\SDP-Assignment-4\target\demo-verification\db073802e1d444da80b313da2eb48975\scenarios.db
+=== Persisted SQLite state ===
+A - Gate admissions
+GateAdmission[operationId=b-failure, plate=BFAIL123, heightCm=180, status=CANCELLED]
+GateAdmission[operationId=c-failure, plate=CFAIL123, heightCm=180, status=CANCELLED]
+GateAdmission[operationId=normal, plate=CAR123, heightCm=180, status=HELD]
+B - Parking reservations
+ParkingReservation[operationId=c-failure, space=3, status=RELEASED]
+ParkingReservation[operationId=normal, space=1, status=RESERVED]
+Sensor space 1: CLEAR
+Sensor space 2: BLOCKED
+Sensor space 3: CLEAR
+C - Parking payments (amounts in cents)
+ParkingPayment[operationId=normal, hours=2, tenderCents=1000, amountCents=1000, status=CAPTURED]
+Workflow progress
+Workflow[request=ParkingRequest[operationId=normal, plate=CAR123, heightCm=180, space=1, hours=2, tenderCents=1000], state=COMPLETED, lastError=]
+Workflow[request=ParkingRequest[operationId=b-failure, plate=BFAIL123, heightCm=180, space=2, hours=2, tenderCents=1000], state=COMPENSATED, lastError=PENDING_B: DomainException: Space 2 is blocked by a sensor obstruction.]
+Workflow[request=ParkingRequest[operationId=c-failure, plate=CFAIL123, heightCm=180, space=3, hours=2, tenderCents=100], state=COMPENSATED, lastError=PENDING_C: DomainException: Payment rejected: 1000 cents required, but only 100 tendered.]
+Exit code: 0
+> java -jar target/smart-parking.jar --db <isolated database> park normal CAR123 180 1 2 1000
+SQLite file: C:\Users\ПК\Desktop\SDP-Assignment-4\target\demo-verification\db073802e1d444da80b313da2eb48975\scenarios.db
+Operation normal
+1. Request persisted; waiting for A.
+2. Stage A executing: read plate and hold entry clearance.
+3. A committed: entry clearance HELD; next B.
+4. Stage B executing: check sensor and reserve space.
+5. B committed: space RESERVED; next C.
+6. Stage C executing: calculate parking charge and validate tender.
+7. C committed: payment CAPTURED; workflow COMPLETED.
+Final persisted state: COMPLETED
+Exit code: 0
+> java -jar target/smart-parking.jar --db <isolated database> park oversized BUS123 260 3 2 1000
+SQLite file: C:\Users\ПК\Desktop\SDP-Assignment-4\target\demo-verification\db073802e1d444da80b313da2eb48975\scenarios.db
+Operation oversized
+25. Request persisted; waiting for A.
+26. Stage A executing: read plate and hold entry clearance.
+27. Failure before any domain commit: PENDING_A: DomainException: Vehicle height must be 1-220 cm; garage clearance is 220 cm.
+Final persisted state: REJECTED
+Reason: PENDING_A: DomainException: Vehicle height must be 1-220 cm; garage clearance is 220 cm.
+Exit code: 0
+> java -jar target/smart-parking.jar --db <isolated database> standalone gate solo-gate
+SQLite file: C:\Users\ПК\Desktop\SDP-Assignment-4\target\demo-verification\db073802e1d444da80b313da2eb48975\scenarios.db
+Independent A: HELD -> ADMITTED -> CANCELLED
+Exit code: 0
+> java -jar target/smart-parking.jar --db <isolated database> standalone spaces solo-spaces
+SQLite file: C:\Users\ПК\Desktop\SDP-Assignment-4\target\demo-verification\db073802e1d444da80b313da2eb48975\scenarios.db
+Independent B: RESERVED -> OCCUPIED -> RELEASED
+Exit code: 0
+> java -jar target/smart-parking.jar --db <isolated database> standalone payment solo-payment
+SQLite file: C:\Users\ПК\Desktop\SDP-Assignment-4\target\demo-verification\db073802e1d444da80b313da2eb48975\scenarios.db
+Independent C: AUTHORIZED -> CAPTURED -> REFUNDED
+Exit code: 0
+> java -jar target/smart-parking.jar --db <isolated database> cancel normal
+SQLite file: C:\Users\ПК\Desktop\SDP-Assignment-4\target\demo-verification\db073802e1d444da80b313da2eb48975\scenarios.db
+Operation normal
+1. Request persisted; waiting for A.
+2. Stage A executing: read plate and hold entry clearance.
+3. A committed: entry clearance HELD; next B.
+4. Stage B executing: check sensor and reserve space.
+5. B committed: space RESERVED; next C.
+6. Stage C executing: calculate parking charge and validate tender.
+7. C committed: payment CAPTURED; workflow COMPLETED.
+28. Failure or administrative cancellation: Administrator requested cancellation. Starting reverse compensation.
+29. Compensation C committed: payment REFUNDED.
+30. Compensation B committed: space RELEASED.
+31. Compensation A committed: entry clearance CANCELLED.
+32. Workflow COMPENSATED; all recorded domain effects have been reversed.
+Final persisted state: COMPENSATED
+Reason: Administrator requested cancellation
+Exit code: 0
+> java -jar target/smart-parking.jar --db <isolated database> cancel normal
+SQLite file: C:\Users\ПК\Desktop\SDP-Assignment-4\target\demo-verification\db073802e1d444da80b313da2eb48975\scenarios.db
+Operation normal
+1. Request persisted; waiting for A.
+2. Stage A executing: read plate and hold entry clearance.
+3. A committed: entry clearance HELD; next B.
+4. Stage B executing: check sensor and reserve space.
+5. B committed: space RESERVED; next C.
+6. Stage C executing: calculate parking charge and validate tender.
+7. C committed: payment CAPTURED; workflow COMPLETED.
+28. Failure or administrative cancellation: Administrator requested cancellation. Starting reverse compensation.
+29. Compensation C committed: payment REFUNDED.
+30. Compensation B committed: space RELEASED.
+31. Compensation A committed: entry clearance CANCELLED.
+32. Workflow COMPENSATED; all recorded domain effects have been reversed.
+Final persisted state: COMPENSATED
+Reason: Administrator requested cancellation
+Exit code: 0
+> Interactive checkpoint, followed by forced process termination (no clean shutdown)
+SQLite file: C:\Users\ПК\Desktop\SDP-Assignment-4\target\demo-verification\db073802e1d444da80b313da2eb48975\hard-restart.db
+SMART PARKING GARAGE | prepaid booking | 3 spaces | 500 cents/hour
+Incomplete persisted operations: []. Use recovery to continue them.
+
+1  Park a vehicle (real input)
+2  Demonstrate B failure (block sensor for space 2)
+3  Demonstrate C failure (insufficient tender; needs free space 3)
+4  Inspect all persisted state
+5  Inspect operation history
+6  Recover all incomplete operations
+7  Cancel/compensate an operation
+8  Demonstrate one independent subsystem
+9  Save checkpoint after A (restart demonstration)
+10 Configure a space sensor
+0  Exit (keep database)
+
+Choice: Operation ID (reuse only for the same request) [visit-c24c1fcb]: License plate [CAR123]: Height cm (maximum 220) [180]: Space (1-3) [1]: Prepaid hours (1-24) [2]: Tender in cents [1000]: Operation crash-booking
+1. Request persisted; waiting for A.
+2. Stage A executing: read plate and hold entry clearance.
+3. A committed: entry clearance HELD; next B.
+Final persisted state: PENDING_B
+
+> java -jar target/smart-parking.jar --db <isolated database> inspect
+
+This database is already open in another garage process.
+Exit code: 2
+Original Java process was forcibly killed after A committed. OS lock released.
+> java -jar target/smart-parking.jar --db <isolated database> inspect
+SQLite file: C:\Users\ПК\Desktop\SDP-Assignment-4\target\demo-verification\db073802e1d444da80b313da2eb48975\hard-restart.db
+=== Persisted SQLite state ===
+A - Gate admissions
+GateAdmission[operationId=crash-booking, plate=CRASH123, heightCm=180, status=HELD]
+B - Parking reservations
+Sensor space 1: CLEAR
+Sensor space 2: CLEAR
+Sensor space 3: CLEAR
+C - Parking payments (amounts in cents)
+Workflow progress
+Workflow[request=ParkingRequest[operationId=crash-booking, plate=CRASH123, heightCm=180, space=1, hours=2, tenderCents=1000], state=PENDING_B, lastError=]
+Exit code: 0
+> java -jar target/smart-parking.jar --db <isolated database> recover crash-booking
+SQLite file: C:\Users\ПК\Desktop\SDP-Assignment-4\target\demo-verification\db073802e1d444da80b313da2eb48975\hard-restart.db
+Operation crash-booking
+1. Request persisted; waiting for A.
+2. Stage A executing: read plate and hold entry clearance.
+3. A committed: entry clearance HELD; next B.
+4. Stage B executing: check sensor and reserve space.
+5. B committed: space RESERVED; next C.
+6. Stage C executing: calculate parking charge and validate tender.
+7. C committed: payment CAPTURED; workflow COMPLETED.
+Final persisted state: COMPLETED
+Exit code: 0
+> java -jar target/smart-parking.jar --db <isolated database> inspect
+SQLite file: C:\Users\ПК\Desktop\SDP-Assignment-4\target\demo-verification\db073802e1d444da80b313da2eb48975\hard-restart.db
+=== Persisted SQLite state ===
+A - Gate admissions
+GateAdmission[operationId=crash-booking, plate=CRASH123, heightCm=180, status=HELD]
+B - Parking reservations
+ParkingReservation[operationId=crash-booking, space=1, status=RESERVED]
+Sensor space 1: CLEAR
+Sensor space 2: CLEAR
+Sensor space 3: CLEAR
+C - Parking payments (amounts in cents)
+ParkingPayment[operationId=crash-booking, hours=2, tenderCents=1000, amountCents=1000, status=CAPTURED]
+Workflow progress
+Workflow[request=ParkingRequest[operationId=crash-booking, plate=CRASH123, heightCm=180, space=1, hours=2, tenderCents=1000], state=COMPLETED, lastError=]
+Exit code: 0
+PASS: success, both compensation depths, extra failure, independent subsystems, idempotency, process lock, hard termination and restart recovery.

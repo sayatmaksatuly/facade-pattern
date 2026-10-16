@@ -28,8 +28,10 @@ function New-GarageProcess([string]$DatabasePath, [string[]]$CommandArgs) {
     $start.RedirectStandardInput = $true
     $start.RedirectStandardOutput = $true
     $start.RedirectStandardError = $true
+    $start.StandardOutputEncoding = [Text.Encoding]::UTF8
+    $start.StandardErrorEncoding = [Text.Encoding]::UTF8
     # Script-owned arguments contain no quotes; quote each path/argument for the Windows process API.
-    $values = @('-jar', (Join-Path $projectRoot 'target/smart-parking.jar'), '--db', $DatabasePath) + $CommandArgs
+    $values = @('-Dfile.encoding=UTF-8', '-jar', (Join-Path $projectRoot 'target/smart-parking.jar'), '--db', $DatabasePath) + $CommandArgs
     foreach ($value in $values) { if ($value.Contains('"')) { throw 'Unexpected quote in verification argument.' } }
     $start.Arguments = ($values | ForEach-Object { '"' + $_ + '"' }) -join ' '
     $process = [Diagnostics.Process]::new()
