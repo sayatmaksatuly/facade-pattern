@@ -1,0 +1,13 @@
+target/
+.tools/
+.m2/
+data/
+*.db
+*.db-shm
+*.db-wal
+*.db.lock
+.idea/
+.vscode/
+*.iml
+docs/.qa/
+__pycache__/
